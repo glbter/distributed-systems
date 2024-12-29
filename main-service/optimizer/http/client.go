@@ -1,6 +1,7 @@
-package privat_bank
+package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,6 +9,8 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+
+	"distributed-systems/main-service/entities"
 )
 
 type PortfolioOptimizatiorClient struct {
@@ -24,34 +27,48 @@ func NewClient(c *http.Client, url string, logger *zap.Logger) PortfolioOptimiza
 	}
 }
 
-type StocksHistory struct {
-}
-
-type RecommendedPortfolio struct {
-}
-
-func (poc PortfolioOptimizatiorClient) Recommed(data StocksHistory) (RecommendedPortfolio, error) {
+func (poc PortfolioOptimizatiorClient) Recommend(data []entities.StocksHistory) (entities.RecommendedPortfolio, error) {
 	logger := poc.logger.With(zap.String("method", "Recommend"))
 
 	start := time.Now()
-	resp, err := poc.client.Get(path.Join(poc.url + "/run"))
+
+	var body []byte
+	body, err := json.Marshal(data)
+	if err != nil {
+		return entities.RecommendedPortfolio{}, err
+	}
+
+	resp, err := poc.client.Post(path.Join(poc.url+"/run"), "application/json", bytes.NewReader(body))
 	logger.Debug("finish run", zap.Duration("duration", time.Since(start)))
 	if err != nil {
-		return RecommendedPortfolio{}, err
+		return entities.RecommendedPortfolio{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return RecommendedPortfolio{}, fmt.Errorf("responded with %v http code", resp.StatusCode)
+		return entities.RecommendedPortfolio{}, fmt.Errorf("responded with %v http code", resp.StatusCode)
 	}
 
 	var r recommendationResp
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return RecommendedPortfolio{}, err
+		return entities.RecommendedPortfolio{}, err
 	}
 
-	return RecommendedPortfolio{}, nil
+	return entities.RecommendedPortfolio{}, nil
 }
 
 type recommendationResp struct {
+	Returns   float64                                       `json:"returns"`
+	Risk      float64                                       `json:"risk"`
+	Portfolio map[StockTicker]entities.RecommendedPortfolio `json:"portfolio"`
 }
+
+type StockTicker string
+
+//type entities.RecommendedPortfolio struct {
+//	Mon3  float64 `json:"3_mon_return"`
+//	Mon6  float64 `json:"6_mon_return"`
+//	Mon12 float64 `json:"12_mon_return"`
+//	Mon24 float64 `json:"24_mon_return"`
+//	Mon32 float64 `json:"32_mon_return"`
+//}
