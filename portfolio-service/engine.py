@@ -9,18 +9,8 @@ class Engine():
     def __init__(self, logger):
         self.logger = logger 
         
-    def create_portfolio(self, stocks_amount):
-        files=['hdfc.csv','itc.csv','l&t.csv','m&m.csv','sunpha.csv','tcs.csv']
-        dfs=[]
-
-        for file in files:
-            temp=pd.read_csv('Stocks_Data/'+file)
-            temp.columns=['Date',file.replace('.csv','')]
-            dfs.append(temp)
-
+    def create_portfolio(self, dfs, stocks_amount):
         stocks = reduce(lambda left,right: pd.merge(left,right,on='Date'), dfs)
-        print(dfs)
-        print(stocks)
 
         def hist_return(months):
             ''' It calculates Stock returns for various months and returns a dataframe.
