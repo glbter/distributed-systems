@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"distributed-systems/main-service/entities"
+	"github.com/glbter/distributed-systems/main-service/entities"
 )
 
 type StockRepo struct {

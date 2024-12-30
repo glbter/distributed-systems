@@ -10,7 +10,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"distributed-systems/main-service/entities"
+	"github.com/glbter/distributed-systems/main-service/entities"
 )
 
 type PortfolioOptimizatiorClient struct {

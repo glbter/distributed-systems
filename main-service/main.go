@@ -11,8 +11,8 @@ import (
 	"os"
 	"time"
 
-	optimizerHttp "distributed-systems/main-service/optimizer/http"
-	"distributed-systems/main-service/optimizer/repo/csv"
+	optimizerHttp "github.com/glbter/distributed-systems/main-service/optimizer/http"
+	"github.com/glbter/distributed-systems/main-service/optimizer/repo/csv"
 )
 
 func main() {

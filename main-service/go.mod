@@ -1,4 +1,4 @@
-module distributed-systems/main-service
+module github.com/glbter/distributed-systems/main-service
 
 go 1.23.1
 
