@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"fmt"
 
 	optimizerHttp "github.com/glbter/distributed-systems/main-service/optimizer/http"
 	"github.com/glbter/distributed-systems/main-service/optimizer/repo/csv"
@@ -53,6 +54,7 @@ func main() {
 	handler := PortfolioHandler{
 		PortfolioEngine: optimizerHttp.NewClient(client, url, customLogger),
 		StockRepo:       csv.StockRepo{},
+		Logger: customLogger,
 	}
 
 	r := chi.NewRouter()
@@ -62,29 +64,38 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 
-	r.Post("portfolio/optimize", handler.OptimizePortfolio)
+	r.Post("/portfolio/optimize", handler.OptimizePortfolio)
 
 	http.ListenAndServe(":8080", r)
 }
 
 type PortfolioHandler struct {
+	Logger *zap.Logger
 	StockRepo       csv.StockRepo
 	PortfolioEngine optimizerHttp.PortfolioOptimizatiorClient
 }
 
 func (h PortfolioHandler) OptimizePortfolio(w http.ResponseWriter, _ *http.Request) {
+	logger := h.Logger.With(zap.String("method", "OptimizePortfolio"))
+
 	stocks, err := h.StockRepo.GetStocks()
 	if err != nil {
+		logger.Error(fmt.Errorf("get stocks: %w",err).Error())
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	res, err := h.PortfolioEngine.Recommend(stocks)
 	if err != nil {
+		logger.Error(fmt.Errorf("recommend portfolio: %w", err).Error())
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	if err := json.NewEncoder(w).Encode(res); err != nil {
+		logger.Error(fmt.Errorf("encode response: %w", err).Error())
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)

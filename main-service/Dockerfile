@@ -3,7 +3,7 @@ FROM golang:1.23 AS builder
 COPY . /app/
 WORKDIR /app
 
-RUN CGO_ENABLED=0 go build -ldflags "-X main.Environment=production" -o ./bin/app ./cmd/main.go
+RUN CGO_ENABLED=0 go build -ldflags "-X main.Environment=production" -o ./bin/app main.go
 
 #--------------------------------------------------------------------------------------------
 FROM scratch AS runtime
