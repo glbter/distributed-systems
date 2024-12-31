@@ -1,4 +1,4 @@
-FROM python:11.4-slim-buster
+FROM python:3.11.4-slim-buster
 
 WORKDIR /app
 
@@ -7,4 +7,8 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]
+EXPOSE 8080
+ENV FLASK_APP=main
+# CMD [ "python3", "-m" , "flask", "run"]
+CMD [ "python3", "main.py"]
+

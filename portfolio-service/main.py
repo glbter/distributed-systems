@@ -24,7 +24,6 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 
-
 class StockDateData(object):
     def __init__(self, date, close):
         self.date = date
@@ -35,11 +34,6 @@ class StockDateData(object):
             'date': self.date,
             'close': self.close,
         }
-    
-# class StockData(object):
-#     def __init__(self, name, data):
-#         self.name = name
-#         self.data = data
 
 class RecommendationEngine(Resource):
     def __init__(self):
@@ -58,21 +52,11 @@ class RecommendationEngine(Resource):
             stock['data'] = stockData
             stocks.append(stock)
 
-        # dfs = []
-        # for stock in stocks:
-        #     stockData = []
-        #     for s in stock['data']:
-        #         stockData.append((s.date, s.close))
-            
-        #     dfs.append(pd.DataFrame(stockData, columns=['Date', stock['name']]))
-
 
     def post(self):
         start = time.time()
 
-        # input_file = open ('request.json')
-        j = json.loads(request.get_json())
-        # j = json.load(input_file)
+        j = request.get_json()
 
         dfs = []
         for stock in j['data']:
@@ -83,18 +67,10 @@ class RecommendationEngine(Resource):
             
             dfs.append(pd.DataFrame(stockData, columns=['Date', stock['name']]))
            
-        # files=['hdfc.csv','itc.csv','l&t.csv','m&m.csv','sunpha.csv','tcs.csv']
-        # dfs=[]
-
-        # for file in files:
-        #     temp=pd.read_csv('Stocks_Data/'+file)
-        #     temp.columns=['Date',file.replace('.csv','')]
-        #     dfs.append(temp)
-
         returns, risk, portfolio = self.engine.create_portfolio(dfs, len(dfs))
 
         logger.info(f"execution time {time.time() - start}")
-        
+       
         return {
             'returns': returns,
             'risk': risk,
