@@ -7,8 +7,8 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-EXPOSE 8080
-ENV FLASK_APP=main
+#EXPOSE 8080
+#ENV FLASK_APP=main
 # CMD [ "python3", "-m" , "flask", "run"]
-CMD [ "python3", "main.py"]
+CMD [ "python3", "receiver.py"]
 
