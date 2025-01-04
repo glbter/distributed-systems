@@ -45,7 +45,7 @@ class AsyncRecommendationEngine():
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
-        self.logger.info(f"execution time {time.time() - start}")
+        self.logger.info(f"cid {properties.correlation_id} execution time {time.time() - start}")
 
 
 def mainAsync(logger):

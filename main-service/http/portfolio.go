@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
+	"time"
 
 	optimizerRabbit "github.com/glbter/distributed-systems/main-service/optimizer/client/rabbit"
 	"github.com/google/uuid"
@@ -49,7 +50,8 @@ func (h PortfolioHandler) OptimizePortfolio(w http.ResponseWriter, _ *http.Reque
 }
 
 func (h PortfolioHandler) OptimizePortfolioAsync(w http.ResponseWriter, r *http.Request) {
-	logger := h.Logger.With(zap.String("method", "OptimizePortfolio"))
+	cid := uuid.New().String()
+	logger := h.Logger.With(zap.String("method", "OptimizePortfolioAsync"), zap.String("cid", cid))
 
 	stocks, err := h.StockRepo.GetStocks()
 	if err != nil {
@@ -66,7 +68,7 @@ func (h PortfolioHandler) OptimizePortfolioAsync(w http.ResponseWriter, r *http.
 		return
 	}
 
-	cid := uuid.New().String()
+	start := time.Now()
 	err = h.PortfolioEngineAsync.StartRecommend(r.Context(), stocks, cid, isVip)
 	if err != nil {
 		logger.Error(fmt.Errorf("recommend portfolio: %w", err).Error())
@@ -77,9 +79,9 @@ func (h PortfolioHandler) OptimizePortfolioAsync(w http.ResponseWriter, r *http.
 	for d := range h.ReplyMessageCh {
 		if cid == d.CorrelationId {
 			logger.Info(fmt.Sprintf("received a message: %s", d.Body))
+			logger.Info("finish run async", zap.Duration("duration", time.Since(start)))
+			w.Write(d.Body)
+			return
 		}
-
-		w.Write(d.Body)
-		return
 	}
 }
