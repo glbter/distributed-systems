@@ -37,11 +37,11 @@ func (poc PortfolioOptimizatiorClient) Recommend(data []entities.StocksHistory) 
 		"data": data,
 	})
 	if err != nil {
-		return entities.RecommendationInfoResp{}, fmt.Errorf("marshall request data: %w",err)
+		return entities.RecommendationInfoResp{}, fmt.Errorf("marshall request data: %w", err)
 	}
 	path, err := url.JoinPath(poc.url, "/recommendation/run")
 	if err != nil {
-		return entities.RecommendationInfoResp{}, fmt.Errorf("build request url: %w",err)
+		return entities.RecommendationInfoResp{}, fmt.Errorf("build request url: %w", err)
 	}
 
 	logger.Info(fmt.Sprintf("request url: %s, path %v", poc.url, path))
@@ -58,7 +58,7 @@ func (poc PortfolioOptimizatiorClient) Recommend(data []entities.StocksHistory) 
 
 	var r entities.RecommendationInfoResp
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return entities.RecommendationInfoResp{}, fmt.Errorf("decode response: %w",err)
+		return entities.RecommendationInfoResp{}, fmt.Errorf("decode response: %w", err)
 	}
 
 	return r, nil
