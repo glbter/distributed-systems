@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	PORTFOLIO_QUEUE = "portfolio_calculation"
+	PORTFOLIO_QUEUE_REQ = "portfolio_calculation_req"
+	PORTFOLIO_QUEUE_RESP = "portfolio_calculation_resp"
 )
 
 func NewPortfolioServiceClient(channel *amqp.Channel) *PortfolioOptimizatiorClient {
@@ -22,20 +23,23 @@ type PortfolioOptimizatiorClient struct {
 }
 
 func (c *PortfolioOptimizatiorClient) StartRecommend(ctx context.Context, data []entities.StocksHistory, cid string, isVipUser bool) error {
-	body, err := json.Marshal(data)
+	body, err := json.Marshal(map[string]any{
+		"data": data,
+	})
 	if err != nil {
 		return err
 	}
 
 	return c.channel.PublishWithContext(ctx,
 		"",          // exchange
-		"rpc_queue", // routing key
+		PORTFOLIO_QUEUE_REQ,
+		// "rpc_queue", // routing key
 		false,       // mandatory
 		false,       // immediate
 		amqp.Publishing{
 			ContentType:   "application/json",
 			CorrelationId: cid,
-			ReplyTo:       PORTFOLIO_QUEUE,
+			ReplyTo:       PORTFOLIO_QUEUE_RESP,
 			Body:          body,
 			Priority:      c.userPriority(isVipUser), // higher prio for convolution
 		})
@@ -52,9 +56,9 @@ func (c *PortfolioOptimizatiorClient) userPriority(isVip bool) uint8 {
 
 func (c *PortfolioOptimizatiorClient) ReceiveRecommend() (<-chan amqp.Delivery, error) {
 	msgs, err := c.channel.Consume(
-		PORTFOLIO_QUEUE, // queue
+		PORTFOLIO_QUEUE_RESP, // queue
 		"",              // consumer
-		true,            // auto-ack
+		false,            // auto-ack
 		false,           // exclusive
 		false,           // no-local
 		false,           // no-wait

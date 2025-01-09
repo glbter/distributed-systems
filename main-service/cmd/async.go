@@ -38,10 +38,22 @@ func ExecuteAsync(logger *zap.Logger) {
 	defer ch.Close()
 
 	_, err = ch.QueueDeclare(
-		rabbit.PORTFOLIO_QUEUE, // name
+		rabbit.PORTFOLIO_QUEUE_REQ, // name
 		false,                  // durable
 		false,                  // delete when unused
-		true,                   // exclusive
+		false,                   // exclusive
+		false,                  // noWait
+		nil,                    // arguments
+	)
+	if err != nil {
+		log.Fatalln("Failed to declare a queue", err)
+	}
+
+	_, err = ch.QueueDeclare(
+		rabbit.PORTFOLIO_QUEUE_RESP, // name
+		false,                  // durable
+		false,                  // delete when unused
+		false,                   // exclusive
 		false,                  // noWait
 		nil,                    // arguments
 	)
@@ -74,5 +86,6 @@ func ExecuteAsync(logger *zap.Logger) {
 
 	r.Post("/portfolio/optimize", handler.OptimizePortfolioAsync)
 
+	logger.Info("server is starting")
 	http.ListenAndServe(":8080", r)
 }
