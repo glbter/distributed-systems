@@ -5,17 +5,21 @@ import pika
 import time
 import json
 import os
+import logging
 
 import pandas as pd
 
 from engine import Engine
-from sender import PORTFOLIO_QUEUE
 from entities import StockDateData
+
+PORTFOLIO_QUEUE_REQ = "portfolio_calculation_req"
+PORTFOLIO_QUEUE_RESP = "portfolio_calculation_resp"
 
 class AsyncRecommendationEngine():
     def __init__(self, logger, channel):
         self.engine = Engine(logger)
         self.channel = channel
+        self.logger = logger
 
 
     def portfolioCallback(self, ch, method, properties, body):
@@ -55,27 +59,35 @@ def mainAsync(logger):
         sys.exit(1)
 
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host=rabbitUrl),
+        pika.URLParameters(rabbitUrl),
     )
     channel = connection.channel()
 
-    channel.queue_declare(queue=PORTFOLIO_QUEUE)
+    channel.queue_declare(queue=PORTFOLIO_QUEUE_REQ)
+    channel.queue_declare(queue=PORTFOLIO_QUEUE_RESP)
 
     handler = AsyncRecommendationEngine(logger, channel)
 
     channel.basic_consume(
-        queue=PORTFOLIO_QUEUE,
+        queue=PORTFOLIO_QUEUE_REQ,
         on_message_callback=handler.portfolioCallback,
-        auto_ack=True,
     )
 
+    channel.basic_qos(prefetch_count=1)
     print(" [*] Waiting for messages. To exit press CTRL+C")
     channel.start_consuming()
 
 
 if __name__ == "__main__":
     try:
-        mainAsync()
+        logger = logging.getLogger(__name__)
+
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)-8s %(message)s',
+            level=logging.INFO,
+            datefmt='%Y-%m-%d %H:%M:%S')
+
+        mainAsync(logger)
     except KeyboardInterrupt:
         print("Interrupted")
         try:

@@ -10,5 +10,5 @@ COPY . .
 #EXPOSE 8080
 #ENV FLASK_APP=main
 # CMD [ "python3", "-m" , "flask", "run"]
-CMD [ "python3", "receiver.py"]
+CMD [ "python3", "async.py"]
 
