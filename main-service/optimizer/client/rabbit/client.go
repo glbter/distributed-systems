@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	PORTFOLIO_QUEUE_REQ = "portfolio_calculation_req"
+	PORTFOLIO_QUEUE_REQ  = "portfolio_calculation_req"
 	PORTFOLIO_QUEUE_RESP = "portfolio_calculation_resp"
 )
 
@@ -31,11 +31,11 @@ func (c *PortfolioOptimizatiorClient) StartRecommend(ctx context.Context, data [
 	}
 
 	return c.channel.PublishWithContext(ctx,
-		"",          // exchange
+		"", // exchange
 		PORTFOLIO_QUEUE_REQ,
 		// "rpc_queue", // routing key
-		false,       // mandatory
-		false,       // immediate
+		false, // mandatory
+		false, // immediate
 		amqp.Publishing{
 			ContentType:   "application/json",
 			CorrelationId: cid,
@@ -43,7 +43,6 @@ func (c *PortfolioOptimizatiorClient) StartRecommend(ctx context.Context, data [
 			Body:          body,
 			Priority:      c.userPriority(isVipUser), // higher prio for convolution
 		})
-
 }
 
 func (c *PortfolioOptimizatiorClient) userPriority(isVip bool) uint8 {
@@ -57,12 +56,12 @@ func (c *PortfolioOptimizatiorClient) userPriority(isVip bool) uint8 {
 func (c *PortfolioOptimizatiorClient) ReceiveRecommend() (<-chan amqp.Delivery, error) {
 	msgs, err := c.channel.Consume(
 		PORTFOLIO_QUEUE_RESP, // queue
-		"",              // consumer
-		false,            // auto-ack
-		false,           // exclusive
-		false,           // no-local
-		false,           // no-wait
-		nil,             // args
+		"",                   // consumer
+		false,                // auto-ack
+		false,                // exclusive
+		false,                // no-local
+		false,                // no-wait
+		nil,                  // args
 	)
 	if err != nil {
 		return nil, err

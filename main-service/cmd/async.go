@@ -17,8 +17,6 @@ import (
 )
 
 func ExecuteAsync(logger *zap.Logger) {
-	//logger := InitLogger()
-
 	rabbitUrl := os.Getenv("RABBIT_URL_PORTFOLIO_ENGINE")
 	if rabbitUrl == "" {
 		log.Fatalln("rabbit url is empty")
@@ -39,11 +37,11 @@ func ExecuteAsync(logger *zap.Logger) {
 
 	_, err = ch.QueueDeclare(
 		rabbit.PORTFOLIO_QUEUE_REQ, // name
-		false,                  // durable
-		false,                  // delete when unused
-		false,                   // exclusive
-		false,                  // noWait
-		nil,                    // arguments
+		false,                      // durable
+		false,                      // delete when unused
+		false,                      // exclusive
+		false,                      // noWait
+		nil,                        // arguments
 	)
 	if err != nil {
 		log.Fatalln("Failed to declare a queue", err)
@@ -51,11 +49,11 @@ func ExecuteAsync(logger *zap.Logger) {
 
 	_, err = ch.QueueDeclare(
 		rabbit.PORTFOLIO_QUEUE_RESP, // name
-		false,                  // durable
-		false,                  // delete when unused
-		false,                   // exclusive
-		false,                  // noWait
-		nil,                    // arguments
+		false,                       // durable
+		false,                       // delete when unused
+		false,                       // exclusive
+		false,                       // noWait
+		nil,                         // arguments
 	)
 	if err != nil {
 		log.Fatalln("Failed to declare a queue", err)
@@ -68,9 +66,7 @@ func ExecuteAsync(logger *zap.Logger) {
 		log.Fatalln("Failed to initialize a portfolio server", err)
 	}
 
-	//httpClient := optimizerHttp.NewClient(client, url, logger)
 	handler := portfolioHttp.PortfolioHandler{
-		//PortfolioEngine: &httpClient,
 		StockRepo:            csv.StockRepo{},
 		Logger:               logger,
 		PortfolioEngineAsync: client,
