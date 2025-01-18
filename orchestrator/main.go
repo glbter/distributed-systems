@@ -70,6 +70,8 @@ func main() {
 				logger = logger.With(zap.String("cid", cid))
 			)
 
+			logger.Info("start processing of request")
+
 			req := map[string]any{}
 			if err := json.Unmarshal(msg.Body, &req); err != nil {
 				logger.Error(err.Error())
@@ -89,6 +91,8 @@ func main() {
 				msg.Reject(false)
 				return
 			}
+
+			logger.Info("start processing step 1")
 
 			if err := ch.PublishWithContext(ctx,
 				"", // exchange
@@ -135,7 +139,11 @@ func main() {
 				return amqp.Delivery{}
 			}
 
+			logger.Info("await finish step 1")
+
 			initStepResp := getResponse(respStep1)
+
+			logger.Info("finished step 1")
 
 			initStepReq := map[string]any{}
 			if err := json.Unmarshal(initStepResp.Body, &initStepReq); err != nil {
@@ -156,6 +164,8 @@ func main() {
 				msg.Reject(false)
 				return
 			}
+
+			logger.Info("start processing step 2")
 
 			if err := ch.PublishWithContext(ctx,
 				"", // exchange
@@ -188,7 +198,11 @@ func main() {
 				log.Fatalln("Failed to initialize a consumer", err)
 			}
 
+			logger.Info("await finish step 2")
+
 			finalStepResp := getResponse(respStep2)
+
+			logger.Info("finished step 2")
 
 			finalResp := map[string]any{}
 			if err := json.Unmarshal(finalStepResp.Body, &finalResp); err != nil {
