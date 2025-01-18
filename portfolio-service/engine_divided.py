@@ -82,7 +82,7 @@ class EngineChunked():
         hist_stock_returns=hist_return([3,6,12,24,36])
 
 
-        n= stocks_amount #6 # Number of stocks = 6
+        n = stocks_amount #6 # Number of stocks = 6
         pop_size=100 # initial population = 100
 
         population = np.array([chromosome(n) for _ in range(pop_size)])
@@ -92,7 +92,7 @@ class EngineChunked():
         cov_hist_return=hist_stock_returns.cov()
 
         # For ease of calculations make covariance of same variable as zero.
-        for i in range(6):
+        for i in range(n):
             cov_hist_return.iloc[i][i]=0
 
 
@@ -115,8 +115,8 @@ class EngineChunked():
         def var_portfolio_return(child):
             part_1 = np.sum(np.multiply(child,sd_hist_return)**2)
             temp_lst=[]
-            for i in range(6):
-                for j in range(6):
+            for i in range(n):
+                for j in range(n):
                     temp=cov_hist_return.iloc[i][j] * child[i] * child[j]
                     temp_lst.append(temp)
             part_2=np.sum(temp_lst)
@@ -150,9 +150,9 @@ class EngineChunked():
                 Input: Parent
                 Output: Offspring (1D Array)'''
             child=parent.copy()
-            n=np.random.choice(range(6),2)
+            n=np.random.choice(range(stocks_amount),2)
             while (n[0]==n[1]):
-                n=np.random.choice(range(6),2)
+                n=np.random.choice(range(stocks_amount),2)
             child[n[0]],child[n[1]]=child[n[1]],child[n[0]]
             return child/sum(child)
 

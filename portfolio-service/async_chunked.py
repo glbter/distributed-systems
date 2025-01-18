@@ -39,6 +39,8 @@ class AsyncRecommendationChunkedEngine():
         chunk_num = j['chunk_number']
         iters_in_chunk = j['iterations_in_chunk']
 
+        self.logger.info(f"cid {properties.correlation_id} requests {j} starts")
+
         returns, risk, portfolio, elite = self.engine.create_portfolio(dfs, len(dfs), elite, chunk_num, iters_in_chunk)
         self.channel.basic_publish(
             exchange="",
