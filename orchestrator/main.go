@@ -80,7 +80,7 @@ func main() {
 				return
 			}
 
-			req["chunk_number"] = 1
+			req["chunk_number"] = 0
 			req["iterations_in_chunk"] = 5
 			req["elite"] = []any{}
 
@@ -153,7 +153,7 @@ func main() {
 				return
 			}
 
-			req["chunk_number"] = 2
+			req["chunk_number"] = 1
 			req["iterations_in_chunk"] = 5
 			req["elite"] = initStepReq["elite"]
 
