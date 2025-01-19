@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	amqp "github.com/rabbitmq/amqp091-go"
-	"go.uber.org/zap"
 	"log"
 	"os"
 	"time"
 
+	amqp "github.com/rabbitmq/amqp091-go"
+	"go.uber.org/zap"
+
 	"github.com/glbter/distributed-systems/main-service/cmd"
-	"github.com/glbter/distributed-systems/main-service/optimizer/client/rabbit"
 )
 
 const (
@@ -45,7 +45,7 @@ func main() {
 	}
 
 	msgs, err := ch.Consume(
-		rabbit.PORTFOLIO_QUEUE_REQ, // queue
+		PORTFOLIO_QUEUE_REQ, // queue
 		"",                         // consumer
 		false,                      // auto-ack
 		false,                      // exclusive
@@ -69,14 +69,13 @@ func main() {
 				ctx    = context.Background()
 				logger = logger.With(zap.String("cid", cid))
 			)
-
+			msg.Ack(false)
 			logger.Info("start processing of request")
 
 			req := map[string]any{}
 			if err := json.Unmarshal(msg.Body, &req); err != nil {
 				logger.Error(err.Error())
 				respondWithError(ch, err, cid, msg.ReplyTo)
-				msg.Reject(false)
 				return
 			}
 
@@ -88,7 +87,6 @@ func main() {
 			if err != nil {
 				logger.Error(err.Error())
 				respondWithError(ch, err, cid, msg.ReplyTo)
-				msg.Reject(false)
 				return
 			}
 
@@ -108,12 +106,11 @@ func main() {
 				}); err != nil {
 				logger.Error(err.Error())
 				respondWithError(ch, err, cid, msg.ReplyTo)
-				msg.Reject(false)
 				return
 			}
 
 			respStep1, err := ch.Consume(
-				rabbit.PORTFOLIO_QUEUE_REQ, // queue
+				ORCHESTRATOR_PORTFOLIO_RESP, // queue
 				"",                         // consumer
 				false,                      // auto-ack
 				false,                      // exclusive
@@ -128,8 +125,11 @@ func main() {
 
 			getResponse := func(responseCh <-chan amqp.Delivery) amqp.Delivery {
 				for rs := range responseCh {
+					logger.Info(fmt.Sprintf("got message with cid %v", rs.CorrelationId))
 					if rs.CorrelationId == cid {
-						rs.Ack(false)
+						if err := rs.Ack(false); err != nil {
+							logger.Error(err.Error())
+						}
 						return rs
 					} else {
 						rs.Reject(true)
@@ -149,7 +149,6 @@ func main() {
 			if err := json.Unmarshal(initStepResp.Body, &initStepReq); err != nil {
 				logger.Error(err.Error())
 				respondWithError(ch, err, cid, msg.ReplyTo)
-				msg.Reject(false)
 				return
 			}
 
@@ -161,7 +160,6 @@ func main() {
 			if err != nil {
 				logger.Error(err.Error())
 				respondWithError(ch, err, cid, msg.ReplyTo)
-				msg.Reject(false)
 				return
 			}
 
@@ -175,39 +173,24 @@ func main() {
 				amqp.Publishing{
 					ContentType:   "application/json",
 					CorrelationId: cid,
-					ReplyTo:       msg.ReplyTo,
+					ReplyTo:       ORCHESTRATOR_PORTFOLIO_RESP,
 					Body:          body,
 					Priority:      msg.Priority,
 				}); err != nil {
 				logger.Error(err.Error())
 				respondWithError(ch, err, cid, msg.ReplyTo)
-				msg.Reject(false)
 				return
-			}
-
-			respStep2, err := ch.Consume(
-				rabbit.PORTFOLIO_QUEUE_RESP, // queue
-				"",                          // consumer
-				false,                       // auto-ack
-				false,                       // exclusive
-				false,                       // no-local
-				false,                       // no-wait
-				nil,                         // args
-			)
-			if err != nil {
-				log.Fatalln("Failed to initialize a consumer", err)
 			}
 
 			logger.Info("await finish step 2")
 
-			finalStepResp := getResponse(respStep2)
+			finalStepResp := getResponse(respStep1)
 
 			logger.Info("finished step 2")
-
+			
 			finalResp := map[string]any{}
 			if err := json.Unmarshal(finalStepResp.Body, &finalResp); err != nil {
 				logger.Error(err.Error())
-				msg.Reject(false)
 				return
 			}
 
@@ -215,28 +198,24 @@ func main() {
 			body, err = json.Marshal(finalResp)
 			if err != nil {
 				logger.Error(err.Error())
-				msg.Reject(false)
 				return
 			}
 
 			if err := ch.PublishWithContext(ctx,
 				"", // exchange
-				PORTFOLIO_QUEUE_RESP,
+				msg.ReplyTo,
 				false, // mandatory
 				false, // immediate
 				amqp.Publishing{
 					ContentType:   "application/json",
 					CorrelationId: cid,
-					ReplyTo:       msg.ReplyTo,
 					Body:          body,
 					Priority:      msg.Priority,
 				}); err != nil {
 				logger.Error(err.Error())
-				msg.Reject(false)
 				return
 			}
 
-			msg.Ack(false)
 			logger.Info("finish", zap.Duration("duration", time.Since(start)))
 		}(msg)
 	}

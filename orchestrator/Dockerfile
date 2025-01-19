@@ -11,6 +11,5 @@ FROM scratch AS runtime
 WORKDIR /app
 
 COPY --from=builder /app/bin/app app
-COPY --from=builder /app/optimizer/repo/csv/ optimizer/repo/csv/
 
 ENTRYPOINT ["./app"]
