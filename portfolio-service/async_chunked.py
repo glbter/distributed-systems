@@ -26,6 +26,8 @@ class AsyncRecommendationChunkedEngine():
         start = time.time()
         j = json.loads(body.decode())
 
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
         dfs = []
         for stock in j['data']:
             stockData = []
@@ -39,9 +41,10 @@ class AsyncRecommendationChunkedEngine():
         chunk_num = j['chunk_number']
         iters_in_chunk = j['iterations_in_chunk']
 
-        self.logger.info(f"cid {properties.correlation_id} requests {j} starts")
+        self.logger.info(f"cid {properties.correlation_id} requests {elite} starts")
 
         returns, risk, portfolio, elite = self.engine.create_portfolio(dfs, len(dfs), elite, chunk_num, iters_in_chunk)
+
         self.channel.basic_publish(
             exchange="",
             routing_key=properties.reply_to,
@@ -50,11 +53,9 @@ class AsyncRecommendationChunkedEngine():
                 'returns': returns,
                 'risk': risk,
                 'portfolio': portfolio.to_dict(),
-                'elite': elite
+                'elite': elite.tolist(),
             }),
         )
-
-        ch.basic_ack(delivery_tag=method.delivery_tag)
 
         self.logger.info(f"cid {properties.correlation_id} execution time {time.time() - start}")
 
@@ -80,7 +81,6 @@ def mainAsync(logger):
         on_message_callback=handler.portfolioCallback,
     )
 
-    channel.basic_qos(prefetch_count=1)
     print(" [*] Waiting for messages. To exit press CTRL+C")
     channel.start_consuming()
 

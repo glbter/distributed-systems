@@ -248,7 +248,8 @@ class EngineChunked():
         while iteration <= (chunk_number+1) * iterations_in_chunk:
             
             # self.logger.info('Iteration:',iteration)
-            population = next_generation(100,elite)
+            e = np.array([np.array(xi) for xi in elite])
+            population = next_generation(100,e)
             elite = Select_elite_population(population)
             Expected_returns=mean_portfolio_return(elite[0])
             Expected_risk=var_portfolio_return(elite[0])
@@ -262,4 +263,4 @@ class EngineChunked():
         # [self.logger.info(hist_stock_returns.columns[i],':',elite[0][i]) for i in list(range(6))]
 
         # self.logger.info('\nExpected returns of {} with risk of {}\n'.format(Expected_returns,Expected_risk))
-        return Expected_returns, Expected_risk, hist_stock_returns, elite
+        return Expected_returns, Expected_risk, hist_stock_returns, np.array(elite)
